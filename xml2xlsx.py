@@ -139,7 +139,7 @@ class xml2xlsx(object):
                         row += 1
                         continue
                     # should this be a header line?
-                    if self.childText(node) and node.tag not in self.scalarUncertainty:
+                    if (self.childText(node) or self.childSU(node)) and node.tag not in self.scalarUncertainty:
                         ws.write(row, 0, node.tag, self.subtitle_format)
                         # write the header
                         for col in xrange(len(self.column)):
@@ -195,7 +195,8 @@ class xml2xlsx(object):
                     else:
                         ws.write(row, 0, node.tag, self.subtitle_format)
                     row +=1
-
+        # set column width at the end
+        ws.set_column(0, len(self.column) + 1, 17)
 
     # update appendix and returns the sheet name of the added data
     # self.Appendix has keys like 'Appendix_1', 'Appendix_2', etc.
@@ -257,7 +258,7 @@ class xml2xlsx(object):
                     xrow = row
                     for xval in appDict['X']:
                         if xrow == row:
-                            ws.write(xrow, 0, xval, self.subtitle_format)
+                            ws.write(xrow, 0, xval, self.header_format)
                         else:
                             ws.write(xrow, 0, xval, self.default)
                         xrow += 1
@@ -266,15 +267,17 @@ class xml2xlsx(object):
                     yrow = row
                     for yval in appDict['Y']:
                         if yrow == row:
-                            ws.write(yrow, 1, yval, self.subtitle_format)
+                            ws.write(yrow, 1, yval, self.header_format)
                         else:
                             ws.write(yrow, 1, yval, self.default)
                         yrow += 1
+                # set column width at the end
+                ws.set_column(0, 1, 20)
                 print "Worksheet '%s' created." %(data)
             except:
                 self.failedSheets.append(data)
                 continue
-            
+
     # input element tag returns the column index
     def getCol(self, tag):
         if tag.lower() in self.column:
@@ -315,4 +318,12 @@ class xml2xlsx(object):
         # iff childSet is a subset of sUSet, return True
         if len(childSet.difference(sUSet)) == 0:
             return True
+        return False
+
+    # input an element and returns a boolean that indicates whether the element
+    # has a child node that is the ScalarUncertainty type
+    def childSU(self, ele):
+        for child in ele.findall('./'):
+            if self.typeSU(child):
+                return True
         return False
